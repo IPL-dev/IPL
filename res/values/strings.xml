@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <string name="app_name">IPL</string>
+    <string name="title_section1">Check Portals</string>
+    <string name="title_section2">Insert Portal</string>
+    <string name="title_section3">Check Portals by Date</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_example">Toogle capture widget</string>
+    <string name="action_settings">Settings</string>
+    <string android:id="@+id/string1" name="title_section4" android:layout_width="wrap_content" android:layout_height="wrap_content">Check Portals by Time</string>
+    <string name="title_activity_my_dialog">MyDialog</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_my_dialog2">MyDialog2</string>
+    <string android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/string1" name="listviewfontsize">15sp</string>
+
+</resources>
