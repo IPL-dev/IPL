@@ -1,12 +1,15 @@
 package com.ingress.portal.log;
 
 import java.util.Calendar;
+import java.util.List;
 
 
 
 import java.util.TimeZone;
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
 import android.app.Activity;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.view.Menu;
@@ -14,17 +17,38 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 
 public class MyDialog extends Activity {
 
-	
-	public void CapturePortal(String name, String date) {
+
+	public void CapturePortal(String name, String date, double lat, double lon) {
 		MySQLiteHelper db = new MySQLiteHelper(this);
-		
-		db.addPortal(new Portal(name, date, date));
+
+		db.addPortal(new Portal(name, date, date, lat, lon));
 	}
-	
+
+	private double[] getGPS() {
+		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);  
+		List<String> providers = lm.getProviders(true);
+
+		/* Loop over the array backwards, and if you get an accurate location, then break                 out the loop*/
+		Location l = null;
+
+		for (int i=providers.size()-1; i>=0; i--) {
+			l = lm.getLastKnownLocation(providers.get(i));
+			if (l != null) break;
+		}
+
+		double[] gps = new double[2];
+		if (l != null) {
+			gps[0] = l.getLatitude();
+			gps[1] = l.getLongitude();
+		}
+		return gps;
+	}
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -38,25 +62,32 @@ public class MyDialog extends Activity {
 		alert.setView(input);
 
 		alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-		public void onClick(DialogInterface dialog, int whichButton) {
-			String value = input.getText().toString();
-			Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-			Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()), Toast.LENGTH_SHORT).show();
-			CapturePortal(value, DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString());
-			if(CheckPortalsFragment.active) {
-				CheckPortalsFragment f = CheckPortalsFragment.activeFrag;
-				f.displayResultList(f.getView());
+			public void onClick(DialogInterface dialog, int whichButton) {
+				String value = input.getText().toString();
+				Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+				double[] pos = {500.0, 500.0};
+				if(MainActivity.savePos) {
+					pos = getGPS();
+					Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()) + " in position: " + pos[0] + " - " + pos[1], Toast.LENGTH_SHORT).show();
+				}
+				else {
+					Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()), Toast.LENGTH_SHORT).show();
+				}
+				CapturePortal(value, DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), pos[0], pos[1]);
+				if(CheckPortalsFragment.active) {
+					CheckPortalsFragment f = CheckPortalsFragment.activeFrag;
+					f.displayResultList(f.getView());
+				}
+				finish();
 			}
-			finish();
-		  }
 		});
 
 		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-		  public void onClick(DialogInterface dialog, int whichButton) {
-			  finish();
-		  }
+			public void onClick(DialogInterface dialog, int whichButton) {
+				finish();
+			}
 		});
-		
+
 		alert.show();
 	}
 

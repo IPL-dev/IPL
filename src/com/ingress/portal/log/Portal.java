@@ -6,20 +6,25 @@ public class Portal {
 	private String name;
 	private String date;
 	private String recharge;
+	private String[] pos = {"", ""};
 	
-	public Portal(String n, String c, String r) {
+	public Portal(String n, String c, String r, double lat, double lon) {
 		super();
 		this.name = n;
 		this.date = c;
 		this.recharge = r;
+		this.pos[0] = String.valueOf(lat);
+		this.pos[1] = String.valueOf(lon);
 	}
 	
-	public Portal(int id, String n, String c, String r) {
+	public Portal(int id, String n, String c, String r, double lat, double lon) {
 		super();
 		this.id = id;
 		this.name = n;
 		this.date = c;
 		this.recharge = r;
+		this.pos[0] = String.valueOf(lat);
+		this.pos[1] = String.valueOf(lon);
 	}
 	
 	public int getId() {
@@ -36,6 +41,10 @@ public class Portal {
 	
 	public String getRecharge() {
 		return this.recharge;
+	}
+	
+	public String[] getPos(){
+		return this.pos;
 	}
 	
 	 @Override

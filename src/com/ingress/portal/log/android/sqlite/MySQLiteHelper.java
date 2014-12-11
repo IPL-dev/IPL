@@ -26,7 +26,9 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
                 "name TEXT, " +
                 "date DATETIME, " +
-                "recharge DATETIME)";
+                "recharge DATETIME," +
+                "latitude REAL," +
+                "longitude REAL)";
  
         // create books table
         db.execSQL(CREATE_PORTAL_TABLE);
@@ -41,7 +43,6 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         this.onCreate(db);
     }
  
-    
     /**
      * CRUD operations (create "add", read "get", update, delete) book + get all books + delete all books
      */
@@ -54,8 +55,10 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     private static final String KEY_NAME = "name";
     private static final String KEY_DATE = "date";
     private static final String KEY_RECHARGE = "recharge";
+    private static final String KEY_LATITUDE = "latitude";
+    private static final String KEY_LONGITUDE = "longitude";
  
-    private static final String[] COLUMNS = {KEY_ID,KEY_NAME,KEY_DATE, KEY_RECHARGE};
+    private static final String[] COLUMNS = {KEY_ID,KEY_NAME,KEY_DATE, KEY_RECHARGE, KEY_LATITUDE, KEY_LONGITUDE};
  
     public void addPortal(Portal p){
         Log.d("addBook", p.toString());
@@ -67,6 +70,8 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         values.put(KEY_NAME, p.getName()); // get title 
         values.put(KEY_DATE, p.getDate()); // get author
         values.put(KEY_RECHARGE, p.getRecharge()); // get author
+        values.put(KEY_LATITUDE, p.getPos()[0]);
+        values.put(KEY_LONGITUDE, p.getPos()[1]);
  
         // 3. insert
         db.insert(TABLE_PORTALS, // table
@@ -98,7 +103,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
             cursor.moveToFirst();
  
         // 4. build book object
-        Portal book = new Portal(Integer.parseInt(cursor.getString(0)), cursor.getString(1), cursor.getString(2), cursor.getString(3));
+        Portal book = new Portal(Integer.parseInt(cursor.getString(0)), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getDouble(0), cursor.getDouble(1));
  
         Log.d("getBook("+String.valueOf(id)+")", book.toString());
  
@@ -109,7 +114,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     // Get All Books
     public Cursor getAllPortals(int order) {
         // 1. build the query
-        String query = "SELECT id as _id, name, date, strftime('%d/%m/%Y  -  %H:%M:%S', date) AS dateF, CAST((julianday('now') - julianday(date)) AS INTEGER) AS days, recharge, strftime('%d/%m/%Y  -  %H:%M:%S', recharge) AS rechargeF, CAST((julianday('now') - julianday(recharge)) AS INTEGER) AS recharges FROM " + TABLE_PORTALS;
+        String query = "SELECT id as _id, name, date, strftime('%d/%m/%Y  -  %H:%M:%S', date) AS dateF, CAST((julianday('now') - julianday(date)) AS INTEGER) AS days, recharge, strftime('%d/%m/%Y  -  %H:%M:%S', recharge) AS rechargeF, CAST((julianday('now') - julianday(recharge)) AS INTEGER) AS recharges, latitude, longitude FROM " + TABLE_PORTALS;
         
         switch(order) {
         	case 0:

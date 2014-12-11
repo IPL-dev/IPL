@@ -1,8 +1,6 @@
 package com.ingress.portal.log;
 
-import android.R.menu;
 import android.app.Activity;
-
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -30,6 +28,7 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 	
 	static public boolean showSort = false;
 	static public Menu menuMain = null;
+	static public boolean savePos = true;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

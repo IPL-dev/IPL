@@ -71,7 +71,7 @@ public class InsertPortalFragment extends Fragment{
 					//String date = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":00";
 					//Toast.makeText(getActivity().getApplicationContext(), "Portal \"" + et.getText()+ "\" captured " + day + "/" + month + "/" + year + " at " + hour + ":" + minute + ":00", Toast.LENGTH_SHORT).show();
 					Toast.makeText(getActivity().getApplicationContext(), "Portal \"" + et.getText()+ "\" captured " + dateF + " at " + timeF, Toast.LENGTH_SHORT).show();
-					db.addPortal(new Portal(et.getText().toString(), date, date));
+					db.addPortal(new Portal(et.getText().toString(), date, date, 500.0, 500.0));
 					clearForms(et, dp, tp);
 				}
 			});

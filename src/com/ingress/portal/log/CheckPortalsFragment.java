@@ -2,18 +2,14 @@ package com.ingress.portal.log;
 
 import java.util.Calendar;
 import java.util.TimeZone;
-
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
-
-
-
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.text.Layout;
 import android.text.format.DateFormat;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -23,9 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 
 public class CheckPortalsFragment extends Fragment{
 
@@ -59,7 +53,7 @@ public class CheckPortalsFragment extends Fragment{
 
 		// The desired columns to be bound
 		String[] columns = new String[] {
-				"name", "dateF", "days", "rechargeF", "recharges"
+				"name", "dateF", "days", "rechargeF", "recharges", "latitude", "longitude"
 		};
 
 		// the XML defined views which the data will be bound to
@@ -122,7 +116,7 @@ public class CheckPortalsFragment extends Fragment{
 			menu.setHeaderTitle(temp);
 			//String[] menuItems = getResources().getStringArray(R.array.menu);
 			String[] menuItems = new String[] {
-					"Recharge", "Remove"
+					"Recharge", "Remove", "Google Maps", "Ingress Intel"
 			};
 			for (int i = 0; i<menuItems.length; i++) {
 				menu.add(Menu.NONE, i, i, menuItems[i]);
@@ -139,17 +133,28 @@ public class CheckPortalsFragment extends Fragment{
 		ListView listView = (ListView) this.getView().findViewById(R.id.listView1Check);
 		Cursor cursor = (Cursor) listView.getItemAtPosition(info.position);
 
+		double lat = cursor.getDouble(8);
+		double lon = cursor.getDouble(9);
+		Intent browserIntent;
 		
 		int id = Integer.valueOf(cursor.getString(0));
 		switch(position) {
 			case 0:
 				Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-				Portal p = new Portal(cursor.getString(1), cursor.getString(2), DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString());
+				Portal p = new Portal(cursor.getString(1), cursor.getString(2), DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), cursor.getDouble(0),cursor.getDouble(1));
 				db.deletePortal(id);
 				db.addPortal(p);
 				break;
 			case 1:
 				db.deletePortal(Integer.valueOf(cursor.getString(0)));
+				break;
+			case 2:
+				browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?q=" + lat + "," + lon));
+				startActivity(browserIntent);
+				break;
+			case 3:
+				browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.ingress.com/intel?ll=" + lat + "," + lon + "&z=17"));
+				startActivity(browserIntent);
 				break;
 		}
 		refreshList();
