@@ -1,0 +1,9 @@
+- Portal decay notifier (android service that checks every hour the time since last recharge. If is greater than 5 or 6 days, send a notification to the user)
+
+- GPS location (store the location of the captured portals and show they in google maps or ingress intel)
+
+- Settings/About menu
+
+- Improve interface (make a more interactive interface with smoother transitions, specially when opening the insert portal menu)
+
+- Portal photo (use the photos as background in the portals of the list)
