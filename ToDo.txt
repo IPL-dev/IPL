@@ -1,6 +1,6 @@
 - Portal decay notifier (android service that checks every hour the time since last recharge. If is greater than 5 or 6 days, send a notification to the user)
 
-- GPS location (store the location of the captured portals and show they in google maps or ingress intel)
+- GPS location (store the location of the captured portals and show they in google maps or ingress intel) -> Partially implemented, see git log to more info
 
 - Settings/About menu
 
