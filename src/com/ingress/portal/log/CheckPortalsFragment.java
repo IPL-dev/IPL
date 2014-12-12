@@ -1,13 +1,17 @@
 package com.ingress.portal.log;
 
 import java.util.Calendar;
+import java.util.List;
 
 import java.util.TimeZone;
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.widget.SimpleCursorAdapter;
@@ -109,6 +113,26 @@ public class CheckPortalsFragment extends Fragment{
 		
 		return v;
 	}
+	
+	private double[] getGPS() {
+		LocationManager lm = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);  
+		List<String> providers = lm.getProviders(true);
+
+		/* Loop over the array backwards, and if you get an accurate location, then break                 out the loop*/
+		Location l = null;
+
+		for (int i=providers.size()-1; i>=0; i--) {
+			l = lm.getLastKnownLocation(providers.get(i));
+			if (l != null) break;
+		}
+
+		double[] gps = new double[2];
+		if (l != null) {
+			gps[0] = l.getLatitude();
+			gps[1] = l.getLongitude();
+		}
+		return gps;
+	}
 
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
@@ -122,7 +146,7 @@ public class CheckPortalsFragment extends Fragment{
 			String[] menuItems;
 			if(cursor.getDouble(8) != 500.0 && cursor.getDouble(9) != 500.0) {
 				menuItems = new String[] {
-						"Recharge", "Remove", "Google Maps", "Ingress Intel"
+						"Recharge", "Remove", "Google Maps", "Ingress Intel", 
 				};
 			}
 			else {
@@ -130,8 +154,13 @@ public class CheckPortalsFragment extends Fragment{
 						"Recharge", "Remove"
 				};
 			}
+			
 			for (int i = 0; i<menuItems.length; i++) {
 				menu.add(Menu.NONE, i, i, menuItems[i]);
+			}
+			
+			if(MainActivity.savePos) {
+				menu.add(Menu.NONE, 4, 4, "Save current position"); 
 			}
 		}
 	}
@@ -148,12 +177,13 @@ public class CheckPortalsFragment extends Fragment{
 		double lat = cursor.getDouble(8);
 		double lon = cursor.getDouble(9);
 		Intent browserIntent;
+		Portal p;
 		
 		int id = Integer.valueOf(cursor.getString(0));
 		switch(position) {
 			case 0:
 				Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-				Portal p = new Portal(cursor.getString(1), cursor.getString(2), DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), cursor.getDouble(0),cursor.getDouble(1));
+				p = new Portal(cursor.getString(1), cursor.getString(2), DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), cursor.getDouble(8),cursor.getDouble(9));
 				db.deletePortal(id);
 				db.addPortal(p);
 				break;
@@ -167,6 +197,12 @@ public class CheckPortalsFragment extends Fragment{
 			case 3:
 				browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.ingress.com/intel?ll=" + lat + "," + lon + "&z=17"));
 				startActivity(browserIntent);
+				break;
+			case 4:
+				double[] pos = getGPS(); 
+				p = new Portal(cursor.getString(1), cursor.getString(2), cursor.getString(5), pos[0], pos[1]);
+				db.deletePortal(id);
+				db.addPortal(p);
 				break;
 		}
 		refreshList();
