@@ -1,6 +1,7 @@
 package com.ingress.portal.log;
 
 import java.util.Calendar;
+
 import java.util.TimeZone;
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
 import android.app.Activity;
@@ -49,6 +50,10 @@ public class CheckPortalsFragment extends Fragment{
 	public void displayResultList(View v) {
 
 		MySQLiteHelper db = new MySQLiteHelper(getActivity().getApplicationContext());
+		if(db.isUpdated()) {
+			db.Upgrade();
+		}
+		
 		Cursor cursor = db.getAllPortals(SortOrder);
 
 		// The desired columns to be bound
@@ -114,10 +119,17 @@ public class CheckPortalsFragment extends Fragment{
 			Cursor cursor = (Cursor) listView.getItemAtPosition(info.position);
 			String temp = cursor.getString(1);
 			menu.setHeaderTitle(temp);
-			//String[] menuItems = getResources().getStringArray(R.array.menu);
-			String[] menuItems = new String[] {
-					"Recharge", "Remove", "Google Maps", "Ingress Intel"
-			};
+			String[] menuItems;
+			if(cursor.getDouble(8) != 500.0 && cursor.getDouble(9) != 500.0) {
+				menuItems = new String[] {
+						"Recharge", "Remove", "Google Maps", "Ingress Intel"
+				};
+			}
+			else {
+				menuItems = new String[] {
+						"Recharge", "Remove"
+				};
+			}
 			for (int i = 0; i<menuItems.length; i++) {
 				menu.add(Menu.NONE, i, i, menuItems[i]);
 			}

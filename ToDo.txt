@@ -2,7 +2,7 @@
 
 - GPS location (store the location of the captured portals and show they in google maps or ingress intel) -> Partially implemented, see git log to more info
 
-- Settings/About menu
+- Settings/About menu -> Partially implemented
 
 - Improve interface (make a more interactive interface with smoother transitions, specially when opening the insert portal menu)
 

@@ -1,0 +1,9 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.ingress.portal.log.MainActivity" >
+    
+    <item 
+        android:id="@+id/returnSettings" 
+        android:showAsAction="withText|ifRoom" 
+        android:title="Return" />
+</menu>

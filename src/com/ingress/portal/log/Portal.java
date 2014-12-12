@@ -6,7 +6,7 @@ public class Portal {
 	private String name;
 	private String date;
 	private String recharge;
-	private String[] pos = {"", ""};
+	private String[] pos = {"500.0", "500.0"};
 	
 	public Portal(String n, String c, String r, double lat, double lon) {
 		super();

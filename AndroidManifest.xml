@@ -41,6 +41,11 @@
             android:label="@string/title_activity_my_dialog2"
             android:theme="@style/Theme.Transparent" >
         </activity>
+        
+        <activity
+            android:name=".SettingsFragment"
+            android:label="@string/title_activity_settings" >
+        </activity>
     </application>
 
 </manifest>

@@ -1,5 +1,7 @@
 package com.ingress.portal.log.android.sqlite;
  
+import java.util.ArrayList;
+
 import com.ingress.portal.log.Portal;
 import android.content.ContentValues;
 import android.content.Context;
@@ -16,7 +18,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "PortalDB";
  
     public MySQLiteHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);  
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
  
     @Override
@@ -59,6 +61,53 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     private static final String KEY_LONGITUDE = "longitude";
  
     private static final String[] COLUMNS = {KEY_ID,KEY_NAME,KEY_DATE, KEY_RECHARGE, KEY_LATITUDE, KEY_LONGITUDE};
+    private static final String[] COLUMNS_OLD = {KEY_ID,KEY_NAME,KEY_DATE, KEY_RECHARGE};
+    
+    public boolean isUpdated() {
+    	boolean ret = false;
+    	
+    	if(COLUMNS.length != this.getReadableDatabase().rawQuery("SELECT * FROM portals", null).getColumnCount()) {
+    		ret = true;
+    	}
+    	
+    	Log.d("UP", "PASSED UPDATE " + ret);
+    	
+    	return ret;
+    }
+    
+    public void Upgrade() {
+    	Log.d("UP", "-1");
+    	SQLiteDatabase db = this.getReadableDatabase();
+    	ArrayList<Portal> l = new ArrayList<Portal>();
+    	
+    	String query = "SELECT * FROM portals";
+    	Log.d("UP", "0");
+    	Cursor c = db.rawQuery(query, null);
+    	Log.d("UP", "1");
+    	c.moveToFirst();
+    	Log.d("UP", "2");
+    	while(!c.isAfterLast()) {
+    		Log.d("SIZE", getPortalPure(c.getInt(0)).toString());
+    		l.add(getPortalPure(c.getInt(0)));
+    		c.moveToNext();
+    	}
+    	
+    	db.execSQL("DROP TABLE IF EXISTS portals");
+    	
+    	String CREATE_PORTAL_TABLE = "CREATE TABLE portals ( " +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
+                "name TEXT, " +
+                "date DATETIME, " +
+                "recharge DATETIME," +
+                "latitude REAL," +
+                "longitude REAL)";
+    	db.execSQL(CREATE_PORTAL_TABLE);
+    	
+    	int i;
+    	for(i=0;i<l.size();i++) {
+    		addPortal(l.get(i));
+    	}
+    }
  
     public void addPortal(Portal p){
         Log.d("addBook", p.toString());
@@ -80,6 +129,33 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
  
         // 4. close
         db.close(); 
+    }
+    
+    public Portal getPortalPure(int id){
+    	 
+        // 1. get reference to readable DB
+        SQLiteDatabase db = this.getReadableDatabase();
+ 
+        // 2. build query
+        Cursor cursor = 
+                db.query(TABLE_PORTALS, // a. table
+                COLUMNS_OLD, // b. column names
+                " id = ?", // c. selections 
+                new String[] { String.valueOf(id) }, // d. selections args
+                null, // e. group by
+                null, // f. having
+                null, // g. order by
+                null); // h. limit
+ 
+        // 3. if we got results get the first one
+        if (cursor != null)
+            cursor.moveToFirst();
+ 
+        // 4. build book object
+        Portal p = new Portal(Integer.parseInt(cursor.getString(0)), cursor.getString(1), cursor.getString(2), cursor.getString(3), 500.0, 500.0);
+ 
+        // 5. return book
+        return p;
     }
  
     public Portal getPortal(int id){
@@ -104,8 +180,6 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
  
         // 4. build book object
         Portal book = new Portal(Integer.parseInt(cursor.getString(0)), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getDouble(0), cursor.getDouble(1));
- 
-        Log.d("getBook("+String.valueOf(id)+")", book.toString());
  
         // 5. return book
         return book;
@@ -152,11 +226,6 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         values.put("date", p.getDate()); // get author
         values.put("recharge", p.getRecharge()); // get author
  
-        // 3. updating row
-        /*int i = db.update(TABLE_PORTALS, //table
-                values, // column/value
-                KEY_ID+" = ?", // selections
-                new String[] { String.valueOf(p.getId()) }); //selection args*/
         String query = "UPDATE portals SET recharge = '" + p.getRecharge() + "' WHERE " + KEY_ID + " = ?" + p.getId();
       
         db.execSQL(query);

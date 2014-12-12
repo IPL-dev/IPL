@@ -12,6 +12,7 @@
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:enabled="false"
             android:paddingBottom="30dp"
             android:paddingTop="30dp"
             android:text="Font Size"
@@ -26,6 +27,22 @@
             android:paddingBottom="30dp"
             android:paddingTop="30dp"
             android:text="Save position" />
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="208dp"
+            android:layout_height="wrap_content"
+            android:paddingBottom="20dp"
+            android:paddingTop="20dp"
+            android:text="Versão de testes, por favor, deixe sua opinião sobre o aplicativo no Google Forms:" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:linksClickable="true"
+            android:text="http://goo.gl/forms/IubzcqCz1y" 
+            android:autoLink="web"/>
 
     </LinearLayout>
 </ScrollView>
