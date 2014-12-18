@@ -32,6 +32,11 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 	static public boolean showSort = false;
 	static public Menu menuMain = null;
 	static public boolean savePos = true;
+	static public String version = "1";
+	
+	static public String getVersion() { 
+		return version;
+	}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

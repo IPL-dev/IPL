@@ -1,7 +1,6 @@
 package com.ingress.portal.log;
 
 import java.text.ParseException;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -36,6 +35,7 @@ public class CheckPortalsFragment extends Fragment{
 	static public boolean active = false;
 	static public CheckPortalsFragment activeFrag;
 	static public int SortOrder = 0;
+	static public boolean outdated = false;
 
 	@Override
 	public void onStart() {
@@ -117,6 +117,23 @@ public class CheckPortalsFragment extends Fragment{
 		View v = inflater.inflate(R.layout.check_portals, container, false);
 		displayResultList(v);
 
+		try {
+			Boolean Resultado = new CheckVersion().execute(MainActivity.getVersion()).get();
+			if(Resultado) {
+				Toast.makeText(getActivity().getApplicationContext(), "Nova versão disponível, baixando APK atualizado", Toast.LENGTH_LONG).show();
+				Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/IPL-dev/IPL/blob/master/bin/IPL.apk?raw=true"));
+				startActivity(browserIntent);
+			}
+			else if (outdated){
+				Toast.makeText(getActivity().getApplicationContext(), "Sem conexão com a internet", Toast.LENGTH_LONG).show();
+				outdated = false;
+			}
+			else {
+				Toast.makeText(getActivity().getApplicationContext(), "Versão atualizada", Toast.LENGTH_LONG).show();
+			}
+		} catch (Exception ex) {
+		}
+		
 		return v;
 	}
 

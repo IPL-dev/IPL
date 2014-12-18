@@ -15,5 +15,6 @@
     <string name="title_activity_my_dialog2">MyDialog2</string>
     <string android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/string1" name="listviewfontsize">15sp</string>
     <string android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/string1" name="title_activity_settings">Settings</string>
+    <string name="updateLink">Para baixar o APK atualizado, <a href="https://github.com/IPL-dev/IPL/blob/master/bin/IPL.apk?raw=true">clique aqui</a></string>
 
 </resources>
