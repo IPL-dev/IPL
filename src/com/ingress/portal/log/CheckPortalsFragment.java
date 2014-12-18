@@ -1,8 +1,10 @@
 package com.ingress.portal.log;
 
-import java.util.Calendar;
-import java.util.List;
+import java.text.ParseException;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
 import android.app.Activity;
@@ -23,8 +25,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.widget.Toast;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
+
 
 public class CheckPortalsFragment extends Fragment{
 
@@ -57,9 +61,9 @@ public class CheckPortalsFragment extends Fragment{
 		if(db.isUpdated()) {
 			db.Upgrade();
 		}
-		
-		Cursor cursor = db.getAllPortals(SortOrder);
 
+		Cursor cursor = db.getAllPortals(SortOrder);
+		/*
 		// The desired columns to be bound
 		String[] columns = new String[] {
 				"name", "dateF", "days", "rechargeF", "recharges", "latitude", "longitude"
@@ -82,12 +86,14 @@ public class CheckPortalsFragment extends Fragment{
 				columns, 
 				to,
 				0);
-		ListView listView = (ListView) v.findViewById(R.id.listView1Check);
+		ListView listView = (ListView) v.findViewById(R.id.listView1Check);*/
+		ExpandableListView listView = (ExpandableListView) v.findViewById(R.id.listView1Check);
 		//getActivity().registerForContextMenu(listView);
 		registerForContextMenu(listView);
 
 		// Assign adapter to ListView		
-		listView.setAdapter(dataAdapter);
+		//listView.setAdapter(dataAdapter);
+		listView.setAdapter(new ExpandableListAdapter(cursor, getActivity()));
 	}
 
 	public void onActivityResult (int requestCode, int resultCode, Intent data) {
@@ -110,21 +116,23 @@ public class CheckPortalsFragment extends Fragment{
 		// Inflate the layout for this fragment
 		View v = inflater.inflate(R.layout.check_portals, container, false);
 		displayResultList(v);
-		
+
 		return v;
 	}
-	
+
 	private double[] getGPS() {
 		LocationManager lm = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);  
-		List<String> providers = lm.getProviders(true);
+		//List<String> providers = lm.getProviders(true);
 
 		/* Loop over the array backwards, and if you get an accurate location, then break                 out the loop*/
 		Location l = null;
-
+		/*
 		for (int i=providers.size()-1; i>=0; i--) {
 			l = lm.getLastKnownLocation(providers.get(i));
 			if (l != null) break;
-		}
+		}*/
+
+		l = lm.getLastKnownLocation("gps");
 
 		double[] gps = new double[2];
 		if (l != null) {
@@ -138,13 +146,15 @@ public class CheckPortalsFragment extends Fragment{
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
 		if (v.getId()==R.id.listView1Check) {
-			ListView listView = (ListView) v.findViewById(R.id.listView1Check);
-			AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
-			Cursor cursor = (Cursor) listView.getItemAtPosition(info.position);
-			String temp = cursor.getString(1);
-			menu.setHeaderTitle(temp);
+			ExpandableListView listView = (ExpandableListView) v.findViewById(R.id.listView1Check);
+			ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo)menuInfo;
+			int group = ExpandableListView.getPackedPositionGroup(info.packedPosition);
+
+			Portal p = (Portal) listView.getExpandableListAdapter().getGroup(group);
+
+			menu.setHeaderTitle(p.getName());
 			String[] menuItems;
-			if(cursor.getDouble(8) != 500.0 && cursor.getDouble(9) != 500.0) {
+			if((p.getPos()[0] != 500.0 && p.getPos()[1] != 500.0) && (p.getPos()[0] != 0.0 && p.getPos()[1] != 0.0)) {
 				menuItems = new String[] {
 						"Recharge", "Remove", "Google Maps", "Ingress Intel", 
 				};
@@ -154,56 +164,84 @@ public class CheckPortalsFragment extends Fragment{
 						"Recharge", "Remove"
 				};
 			}
-			
+
 			for (int i = 0; i<menuItems.length; i++) {
 				menu.add(Menu.NONE, i, i, menuItems[i]);
 			}
-			
+
 			if(MainActivity.savePos) {
 				menu.add(Menu.NONE, 4, 4, "Save current position"); 
 			}
 		}
 	}
 
+	public String formatDate(String d) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat(
+				"dd/MM/yyyy  -  HH:mm:ss");
+		Date myDate = null;
+		try {
+			myDate = dateFormat.parse(d);
+
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+
+		SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String finalDate = timeFormat.format(myDate);
+
+		return finalDate;
+	}
+
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		MySQLiteHelper db = new MySQLiteHelper(getActivity().getApplicationContext());
-		AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+		//AdapterContextMenuInfo info = (AdapterContextMenuInfo)item.getMenuInfo();
 		int position = item.getItemId();
 
-		ListView listView = (ListView) this.getView().findViewById(R.id.listView1Check);
-		Cursor cursor = (Cursor) listView.getItemAtPosition(info.position);
+		ExpandableListView listView = (ExpandableListView) this.getView().findViewById(R.id.listView1Check);
+		//Cursor cursor = (Cursor) listView.getItemAtPosition(info.position);
 
-		double lat = cursor.getDouble(8);
-		double lon = cursor.getDouble(9);
+		ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo)item.getMenuInfo();
+		int group = ExpandableListView.getPackedPositionGroup(info.packedPosition);
+
+		Portal p = (Portal) listView.getExpandableListAdapter().getGroup(group);
+
+		double lat = p.getPos()[0];
+		double lon = p.getPos()[1];
 		Intent browserIntent;
-		Portal p;
-		
-		int id = Integer.valueOf(cursor.getString(0));
+		Portal temp;
+
+		int id = p.getId();
 		switch(position) {
-			case 0:
-				Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-				p = new Portal(cursor.getString(1), cursor.getString(2), DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), cursor.getDouble(8),cursor.getDouble(9));
+		case 0:
+			Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+			temp = new Portal(p.getName(), formatDate(p.getDate()), DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), lat, lon);
+			db.deletePortal(id);
+			db.addPortal(temp);
+			break;
+		case 1:
+			db.deletePortal(p.getId());
+			break;
+		case 2:
+			browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?q=" + lat + "," + lon));
+			startActivity(browserIntent);
+			break;
+		case 3:
+			browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.ingress.com/intel?ll=" + lat + "," + lon + "&z=17"));
+			startActivity(browserIntent);
+			break;
+		case 4:
+			double[] pos = getGPS(); 
+			if(pos[0] == 0.0 && pos[1] == 0.0) {
+				Toast.makeText(getActivity().getApplicationContext(), "Location could not be determined", Toast.LENGTH_LONG).show();
+			}
+			else {
+				temp = new Portal(p.getName(), formatDate(p.getDate()), formatDate(p.getRecharge()), pos[0], pos[1]);
 				db.deletePortal(id);
-				db.addPortal(p);
-				break;
-			case 1:
-				db.deletePortal(Integer.valueOf(cursor.getString(0)));
-				break;
-			case 2:
-				browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?q=" + lat + "," + lon));
-				startActivity(browserIntent);
-				break;
-			case 3:
-				browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.ingress.com/intel?ll=" + lat + "," + lon + "&z=17"));
-				startActivity(browserIntent);
-				break;
-			case 4:
-				double[] pos = getGPS(); 
-				p = new Portal(cursor.getString(1), cursor.getString(2), cursor.getString(5), pos[0], pos[1]);
-				db.deletePortal(id);
-				db.addPortal(p);
-				break;
+				db.addPortal(temp);
+				Toast.makeText(getActivity().getApplicationContext(), "Location updated", Toast.LENGTH_LONG).show();
+			}
+			break;
 		}
 		refreshList();
 

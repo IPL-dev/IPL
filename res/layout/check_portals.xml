@@ -3,11 +3,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <ListView
+    <ExpandableListView
         android:id="@+id/listView1Check"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-    </ListView>
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true" >
+    </ExpandableListView>
 
 </RelativeLayout>

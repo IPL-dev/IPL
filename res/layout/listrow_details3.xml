@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:gravity="left"
+    android:orientation="vertical"
+    android:padding="6dip" >
+
+    <View
+            android:layout_width="5dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/divider1" />
+    
+    <RelativeLayout
+        android:id="@+id/layout_recharge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true" >
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:paddingBottom="10dp"
+            android:shadowColor="#888888"
+            android:shadowDy="5"
+            android:shadowRadius="8"
+            android:text="Recharge"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/recharge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_below="@id/textView2"
+            android:padding="5dip"
+            android:text="TextView"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/days2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_below="@id/recharge"
+            android:padding="5dip"
+            android:text="Days"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/decayed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/days2"
+            android:layout_toLeftOf="@id/days2"
+            android:padding="5dip"
+            android:text="TextView"
+            android:textSize="15sp" />
+        
+    </RelativeLayout>
+
+    
+    
+    <RelativeLayout
+        android:id="@+id/layout_capture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:gravity="left" >
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:paddingBottom="10dp"
+            android:shadowColor="#888888"
+            android:shadowDy="5"
+            android:shadowRadius="8"
+            android:text="Capture"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/textView1"
+            android:padding="5dip"
+            android:text="TextView"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/date"
+            android:padding="5dip"
+            android:text="TextView"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/days1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/time"
+            android:layout_toRightOf="@id/time"
+            android:padding="5dip"
+            android:text="Days"
+            android:textSize="15sp" />
+
+    </RelativeLayout>
+    
+</RelativeLayout>

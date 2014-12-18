@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:ems="10"
-        android:inputType="textNoSuggestions" >
+        android:inputType="textAutoComplete" >
         <requestFocus />
     </EditText>
     

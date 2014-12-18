@@ -31,15 +31,17 @@ public class MyDialog extends Activity {
 
 	private double[] getGPS() {
 		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);  
-		List<String> providers = lm.getProviders(true);
+		//List<String> providers = lm.getProviders(true);
 
 		/* Loop over the array backwards, and if you get an accurate location, then break                 out the loop*/
 		Location l = null;
-
+		/*
 		for (int i=providers.size()-1; i>=0; i--) {
 			l = lm.getLastKnownLocation(providers.get(i));
 			if (l != null) break;
-		}
+		}*/
+		
+		l = lm.getLastKnownLocation("gps");
 
 		double[] gps = new double[2];
 		if (l != null) {
@@ -65,13 +67,16 @@ public class MyDialog extends Activity {
 			public void onClick(DialogInterface dialog, int whichButton) {
 				String value = input.getText().toString();
 				Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-				double[] pos = {500.0, 500.0};
-				if(MainActivity.savePos) {
+				double[] pos = getGPS();
+				if(MainActivity.savePos && (pos[0] != 0.0 && pos[1] != 0.0)) {
 					pos = getGPS();
-					Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()) + " in position: " + pos[0] + " - " + pos[1], Toast.LENGTH_SHORT).show();
+					Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()) + " in position: " + pos[0] + " - " + pos[1], Toast.LENGTH_LONG).show();
+				}
+				else if(pos[0] == 0.0 && pos[1] == 0.0) {
+					Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()) + ", but location could not be determined", Toast.LENGTH_LONG).show();
 				}
 				else {
-					Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()), Toast.LENGTH_SHORT).show();
+					Toast.makeText(getApplicationContext(), "Portal \"" + value + "\" captured " + DateFormat.format("dd/MM/yyyy", cal.getTime()) + " at " + DateFormat.format("HH:mm:ss", cal.getTime()), Toast.LENGTH_LONG).show();
 				}
 				CapturePortal(value, DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), pos[0], pos[1]);
 				if(CheckPortalsFragment.active) {

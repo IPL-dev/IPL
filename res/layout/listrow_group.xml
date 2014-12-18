@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="75dp"
+    android:background="@android:drawable/editbox_background"
+    android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingLeft="6dip"
+            android:paddingTop="6dip"
+            android:padding="5dip"
+	        android:shadowColor="#888888"
+	        android:shadowDy="5"
+	        android:shadowRadius="8"
+            android:textSize="25sp"
+			android:textStyle="bold"
+            tools:ignore="SpUsage" />
+
+</LinearLayout>
