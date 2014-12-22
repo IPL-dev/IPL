@@ -10,7 +10,7 @@ public class Portal {
 	private String time;
 	private String recharge;
 	private String decayed;
-	private Double[] pos = {500.0, 500.0};
+	private double[] pos = {500.0, 500.0};
 	
 	public Portal(String n, String c, String r, double lat, double lon) {
 		super();
@@ -78,7 +78,7 @@ public class Portal {
 		return this.decayed;
 	}
 	
-	public Double[] getPos(){
+	public double[] getPos(){
 		return this.pos;
 	}
 	

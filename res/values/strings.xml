@@ -4,7 +4,7 @@
     <string name="app_name">IPL</string>
     <string name="title_section1">Check Portals</string>
     <string name="title_section2">Insert Portal</string>
-    <string name="title_section3">Check Portals by Date</string>
+    <string name="title_section3">Show Pivots</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_example">Toogle capture widget</string>

@@ -2,7 +2,10 @@ package com.ingress.portal.log;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
@@ -15,8 +18,10 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -28,31 +33,131 @@ import android.widget.Toast;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
 
-
-public class CheckPortalsFragment extends Fragment{
+public class ShowPivotsFragment extends Fragment{
 
 	public SimpleCursorAdapter dataAdapter;
-	static public boolean active = false;
-	static public CheckPortalsFragment activeFrag;
 	static public int SortOrder = 0;
 	static public boolean outdated = false;
 
 	@Override
 	public void onStart() {
 		super.onStart();
-		active = true;
-		activeFrag = this;
 	}
 
 	@Override
 	public void onStop() {
 		super.onStop();
-		active = false;
-		activeFrag = null;
 	}
 
 	public void refreshList(){
 		displayResultList(this.getView());
+	}
+
+	public ArrayList<distPortal> distance(ArrayList<Portal> portals, double medLat, double medLong) {
+		int i;
+		double dist;
+		double[] pos;
+		Portal p;
+		ArrayList<distPortal> dists = new ArrayList<distPortal>();
+		for(i=0;i<portals.size();i++) {
+			p = portals.get(i);
+			pos = p.getPos();
+			dist = Math.pow(medLat - pos[0], 2) + Math.pow(medLong - pos[1], 2);
+			dists.add(new distPortal(p.getId(), p.getName(), dist, pos, i));
+		}
+
+		return dists;
+	}
+
+	public int compare3(double a, double b, double c) {
+		if(a <= b && a <= c) {
+			return 0;
+		}
+		else if(b <= c) {
+			return 1;
+		}
+		else {
+			return 2;
+		}
+	}
+
+	public ArrayList<Group> calculatePivots(Cursor c) {
+		ArrayList<Group> res = new ArrayList<Group>();
+		ArrayList<Portal> portals = new ArrayList<Portal>();
+		Portal temp;
+
+		double sumLat = 0.0, sumLong = 0.0;
+		int n = 0;
+		c.moveToFirst();
+		while(!c.isAfterLast()) {
+			temp = new Portal(c.getInt(0), c.getString(1), c.getString(3), c.getString(6), c.getString(4), c.getString(7), c.getDouble(8), c.getDouble(9));
+			sumLat += c.getDouble(8);
+			sumLong += c.getDouble(9);
+			n++;
+			portals.add(temp);
+			c.moveToNext();
+		}
+		c.close();
+		double medLat, medLong;
+
+		medLat = sumLat/n;
+		medLong = sumLong/n;
+		
+		Log.d("PIVOTSMED", medLat + ", " + medLong);
+
+		if(n > 3) {
+			ArrayList<distPortal> dists = distance(portals, medLat, medLong);
+			Collections.sort(dists);
+			
+			Log.d("PIVOTS", dists.toString());
+
+			distPortal[] pivots = new distPortal[3];
+
+
+			pivots[0] = dists.get(0);
+			pivots[1] = dists.get(1);
+			pivots[2] = dists.get(2);
+			
+			Log.d("PIVOTS", pivots[0].name + " - " + pivots[1].name + " - " + pivots[2].name);
+
+			portals.remove(pivots[0].index);
+			portals.remove(pivots[1].index);
+			portals.remove(pivots[2].index);
+
+			ArrayList<distPortal> distsP1 = distance(portals, pivots[0].getPos()[0], pivots[0].getPos()[1]);
+			ArrayList<distPortal> distsP2 = distance(portals, pivots[1].getPos()[0], pivots[1].getPos()[1]);
+			ArrayList<distPortal> distsP3 = distance(portals, pivots[2].getPos()[0], pivots[2].getPos()[1]);
+
+			Group tempG;
+
+			tempG = new Group(pivots[0].name);
+			res.add(0, tempG);
+			tempG = new Group(pivots[1].name);
+			res.add(1, tempG);
+			tempG = new Group(pivots[2].name);
+			res.add(2, tempG);
+
+
+			int i;
+			int min;
+			for(i=0;i<portals.size();i++) {
+				min = compare3(distsP1.get(i).getDist(), distsP2.get(i).getDist(), distsP3.get(i).getDist());
+				
+				Log.d("PIVOTS", "P1: " + distsP1.get(i).getDist() + " P2: " + distsP2.get(i).getDist() + " P3: " + distsP3.get(i).getDist() + " MIN: " + min);
+
+				res.get(min).insertChild(distsP1.get(i).name);
+			}
+		}
+		else {
+			int i;
+			for(i=0;i<portals.size();i++) {
+				Group tempG;
+				tempG = new Group(portals.get(i).getName());
+				res.add(tempG);
+			}
+		}
+
+		return res;
 	}
 
 	public void displayResultList(View v) {
@@ -63,37 +168,16 @@ public class CheckPortalsFragment extends Fragment{
 		}
 
 		Cursor cursor = db.getAllPortals(SortOrder);
-		/*
-		// The desired columns to be bound
-		String[] columns = new String[] {
-				"name", "dateF", "days", "rechargeF", "recharges", "latitude", "longitude"
-		};
 
-		// the XML defined views which the data will be bound to
-		int[] to = new int[] {
-				R.id.name,
-				R.id.date,
-				R.id.time,
-				R.id.recharge,
-				R.id.decayed
-		};
-
-		// create the adapter using the cursor pointing to the desired data 
-		//as well as the layout information
-		dataAdapter = new SimpleCursorAdapter(
-				getActivity(), R.layout.listitem2, 
-				cursor, 
-				columns, 
-				to,
-				0);
-		ListView listView = (ListView) v.findViewById(R.id.listView1Check);*/
 		ExpandableListView listView = (ExpandableListView) v.findViewById(R.id.listView1Check);
 		//getActivity().registerForContextMenu(listView);
 		registerForContextMenu(listView);
 
+		ArrayList<Group> tempL = calculatePivots(cursor);
+
 		// Assign adapter to ListView		
 		//listView.setAdapter(dataAdapter);
-		listView.setAdapter(new ExpandableListAdapter(cursor, getActivity()));
+		listView.setAdapter(new ExpandableListAdapter2(tempL, getActivity()));
 	}
 
 	public void onActivityResult (int requestCode, int resultCode, Intent data) {
@@ -116,7 +200,7 @@ public class CheckPortalsFragment extends Fragment{
 		// Inflate the layout for this fragment
 		View v = inflater.inflate(R.layout.check_portals, container, false);
 		displayResultList(v);
-		
+
 		return v;
 	}
 
@@ -246,5 +330,49 @@ public class CheckPortalsFragment extends Fragment{
 		refreshList();
 
 		return true;
+	}
+
+	public class distPortal implements Comparable<distPortal>{
+		int id;
+		String name;
+		double dist;
+		double[] pos;
+		int index;
+
+		public distPortal(int i, String n, double d, double[] p, int ind) {
+			this.id = i;
+			this.name = n;
+			this.dist = d;
+			this.pos = p;
+			this.index = ind;
+		}
+
+		public double getDist() {
+			return this.dist;
+		}
+
+		public double[] getPos() {
+			return this.pos;
+		}
+		
+		@Override
+		public String toString() {
+			return this.name + " - " + this.dist;
+		}
+
+		public int compareTo(distPortal compareDist) {
+
+			double distT = compareDist.getDist();
+
+			if(this.dist > distT) {
+				return 1;
+			}
+			else if (this.dist < distT) {
+				return -1;
+			}
+			else {
+				return 0;
+			}
+		}
 	}
 }

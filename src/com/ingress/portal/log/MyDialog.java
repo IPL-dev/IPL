@@ -1,10 +1,6 @@
 package com.ingress.portal.log;
 
 import java.util.Calendar;
-import java.util.List;
-
-
-
 import java.util.TimeZone;
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
 import android.app.Activity;

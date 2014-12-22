@@ -10,6 +10,12 @@ public class Group {
 	public Group(String string) {
 		this.string = string;
 	}
+	
+	public void insertChild(String name) {
+		children.add(name);
+		
+		return;
+	}
 
 	public String getGroup() {
 		return this.string;

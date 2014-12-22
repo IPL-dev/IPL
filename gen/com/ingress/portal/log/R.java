@@ -83,6 +83,7 @@ public final class R {
         public static final int listitem2=0x7f030009;
         public static final int listrow_details3=0x7f03000a;
         public static final int listrow_group=0x7f03000b;
+        public static final int listrow_single=0x7f03000c;
     }
     public static final class menu {
         public static final int global=0x7f080000;
