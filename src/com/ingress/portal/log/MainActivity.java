@@ -1,12 +1,17 @@
 package com.ingress.portal.log;
 
-import android.app.Activity;
+import java.util.ArrayList;
 
+import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
+import android.app.Activity;
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -14,6 +19,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.support.v4.widget.DrawerLayout;
 
@@ -56,8 +66,6 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 		mNavigationDrawerFragment.setUp(
 				R.id.navigation_drawer,
 				(DrawerLayout) findViewById(R.id.drawer_layout));
-
-
 	}
 
 	@Override
@@ -122,6 +130,12 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 			.commit();
 			showSort = true;
 			break;
+		case 3:
+			fragmentManager.beginTransaction()
+			.replace(R.id.container, new CheckGroupsFragment())
+			.commit();
+			showSort = false;
+			break;
 		}
 	}
 
@@ -164,6 +178,121 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 		}
 		return super.onCreateOptionsMenu(menu);
 	}
+	
+	public void openGroupInsert(final Spinner parent) {
+		final AlertDialog.Builder alert = new AlertDialog.Builder(this);
+		
+		alert.setTitle("Insert Group");
+		alert.setMessage("Group Name");
+
+		// Set an EditText view to get user input 
+		final EditText input = new EditText(this);
+		final MySQLiteHelper db = new MySQLiteHelper(getApplicationContext());
+		
+		alert.setView(input);
+
+		alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				String value = input.getText().toString();
+				db.addGroup(value);
+				updateSpinner(parent, value);
+			}
+		});
+
+		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+
+		alert.show();
+	}
+	
+	public void updateSpinner(Spinner sp, String item) {
+		ArrayList<String> lista = new ArrayList<String>();
+		MySQLiteHelper db = new MySQLiteHelper(getApplicationContext());
+		Cursor c = db.getGroups();
+		
+		c.moveToFirst();
+		lista.add("");
+		lista.add("New Group...");
+		lista.add("All");
+		int it = 0;
+		int i = 0;
+		while(!c.isAfterLast()) {
+			lista.add(c.getString(1));
+			if(c.getString(1).compareTo(item) == 0) {
+				it = i;
+			}
+			c.moveToNext();
+			i++;
+		}
+		
+		c.close();
+		
+		if(CheckGroupsFragment.active) {
+			CheckGroupsFragment.activeFrag.refreshList();
+		}
+		
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, lista);
+		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		sp.setAdapter(adapter);
+		if(item.compareTo("") != 0)
+			it += 3;
+		sp.setSelection(it);
+	}
+	
+	public void openGroupDialog() {
+		final AlertDialog.Builder alert = new AlertDialog.Builder(this);
+		
+		alert.setTitle("Insert Group");
+		alert.setMessage("Group Name");
+
+		// Set an EditText view to get user input 
+		final Spinner input = new Spinner(this);
+		
+		updateSpinner(input, "");
+		
+		input.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+			@Override
+			public void onItemSelected(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				if(arg2 == 1) {
+					openGroupInsert(input);
+				}
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> arg0) {
+				
+			}
+		});
+		
+		alert.setView(input);
+
+		alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				String value = input.getSelectedItem().toString();
+				Toast.makeText(getApplicationContext(), "TESTE: " + value, Toast.LENGTH_LONG).show();
+				if((value.compareTo("All") != 0) && (value.compareTo("") != 0) && (value.compareTo("New Group...") != 0)) {
+					CheckPortalsFragment.list = 1;
+					CheckPortalsFragment.Group = value;
+				}
+				else {
+					CheckPortalsFragment.list = 0;
+					CheckPortalsFragment.Group = "";
+				}
+				if(CheckPortalsFragment.active) CheckPortalsFragment.activeFrag.refreshList();
+			}
+		});
+
+		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+
+		alert.show();
+	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -180,30 +309,33 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 					.replace(R.id.container, new SettingsFragment())
 					.commit();*/
 			Intent dialogIntent = new Intent(getBaseContext(), SettingsFragment.class);
-		//dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		startActivity(dialogIntent);
-		selected = false;
-		break;
+			//dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			startActivity(dialogIntent);
+			selected = false;
+			break;
+		case(R.id.group_menu):
+			openGroupDialog();
+			break;
 		case(R.id.menuSortName):
 			Toast.makeText(getApplicationContext(), "List sorted by portal name", Toast.LENGTH_SHORT).show();
-		CheckPortalsFragment.SortOrder = 0;
-		selected = true;
-		break;
+			CheckPortalsFragment.SortOrder = 0;
+			selected = true;
+			break;
 		case(R.id.menuSortDate):
 			Toast.makeText(getApplicationContext(), "List sorted by portal capture date", Toast.LENGTH_SHORT).show();
-		CheckPortalsFragment.SortOrder = 1;
-		selected = true;
-		break;
+			CheckPortalsFragment.SortOrder = 1;
+			selected = true;
+			break;
 		case(R.id.menuSortTime):
 			Toast.makeText(getApplicationContext(), "List sorted by portal time captured", Toast.LENGTH_SHORT).show();
-		CheckPortalsFragment.SortOrder = 2;
-		selected = true;
-		break;
+			CheckPortalsFragment.SortOrder = 2;
+			selected = true;
+			break;
 		case(R.id.menuSortRecharge):
 			Toast.makeText(getApplicationContext(), "List sorted by portal recharge date", Toast.LENGTH_SHORT).show();
-		CheckPortalsFragment.SortOrder = 3;
-		selected = true;
-		break;
+			CheckPortalsFragment.SortOrder = 3;
+			selected = true;
+			break;
 		}
 
 		if(selected) {

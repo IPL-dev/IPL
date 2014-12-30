@@ -23,7 +23,6 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
  
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // SQL statement to create book table
         String CREATE_PORTAL_TABLE = "CREATE TABLE portals ( " +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
                 "name TEXT, " +
@@ -31,17 +30,13 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
                 "recharge DATETIME," +
                 "latitude REAL," +
                 "longitude REAL)";
- 
-        // create books table
+
         db.execSQL(CREATE_PORTAL_TABLE);
     }
  
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop older books table if existed
         db.execSQL("DROP TABLE IF EXISTS portals");
- 
-        // create fresh books table
         this.onCreate(db);
     }
  
@@ -51,6 +46,8 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
  
     // Books table name
     private static final String TABLE_PORTALS = "portals";
+    private static final String TABLE_GROUPS = "groups";
+    private static final String TABLE_PORTAL_GROUPS = "portalgroups";
  
     // Books Table Columns names
     private static final String KEY_ID = "id";
@@ -59,14 +56,21 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     private static final String KEY_RECHARGE = "recharge";
     private static final String KEY_LATITUDE = "latitude";
     private static final String KEY_LONGITUDE = "longitude";
+    
+    private static final String KEY_ID_PORTAL = "portal_id";
+    private static final String KEY_ID_GROUP = "group_id";
  
-    private static final String[] COLUMNS = {KEY_ID,KEY_NAME,KEY_DATE, KEY_RECHARGE, KEY_LATITUDE, KEY_LONGITUDE};
-    private static final String[] COLUMNS_OLD = {KEY_ID,KEY_NAME,KEY_DATE, KEY_RECHARGE};
+    private static final String[] COLUMNS = {KEY_ID, KEY_NAME, KEY_DATE, KEY_RECHARGE, KEY_LATITUDE, KEY_LONGITUDE};
+    private static final String[] COLUMNS_OLD = {KEY_ID, KEY_NAME, KEY_DATE, KEY_RECHARGE};
+    
+    private static final String[] COLUMNS_GROUPS = {KEY_ID, KEY_NAME};
+    
+    private static final String[] COLUMNS_PORTAL_GROUPS = {KEY_ID, KEY_ID_PORTAL, KEY_ID_GROUP};
     
     public boolean isUpdated() {
     	boolean ret = false;
     	
-    	if(COLUMNS.length != this.getReadableDatabase().rawQuery("SELECT * FROM portals", null).getColumnCount()) {
+    	if(COLUMNS.length != this.getReadableDatabase().rawQuery("SELECT id FROM portals", null).getColumnCount()) {
     		ret = true;
     	}
     	
@@ -75,17 +79,120 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     	return ret;
     }
     
+    public Cursor getGroups() {
+    	SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT id as _id, name FROM groups ORDER BY name ASC", null);
+        if(cursor != null)
+        	cursor.moveToFirst();
+        
+        return cursor;
+    }
+    
+    public Cursor getGroupPortals(String group, int order) {
+        String query = "SELECT P.id as _id, P.name, date, strftime('%d/%m/%Y  -  %H:%M:%S', date) AS dateF, CAST((julianday('now') - julianday(date)) AS INTEGER) AS days, recharge, strftime('%d/%m/%Y  -  %H:%M:%S', recharge) AS rechargeF, CAST((julianday('now') - julianday(recharge)) AS INTEGER) AS recharges, latitude, longitude FROM " + TABLE_PORTALS +
+        		" AS P, " + TABLE_GROUPS + " AS G, " + TABLE_PORTAL_GROUPS + " AS GP WHERE GP.group_id = G.id AND GP.portal_id = P.id AND G.name = \"" + group + "\"";
+        
+        switch(order) {
+        	case 0:
+        		query += " ORDER BY P.name";
+        		break;
+        	case 1:
+        		query += " ORDER BY julianday(date) ASC";
+        		break;
+        	case 2:
+        		query += " ORDER BY julianday(date) DESC";
+        		break;
+        	case 3:
+        		query += " ORDER BY julianday(recharge) ASC";
+        		break;
+        }
+        		
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        if(cursor != null)
+        	cursor.moveToFirst();
+        return cursor;
+    }
+    
+    public long addGroup(String name) {
+    	
+    	ContentValues values = new ContentValues();
+        values.put(KEY_NAME, name);
+
+        long err = this.getWritableDatabase().insert(TABLE_GROUPS,
+                null,
+                values);
+    	
+        return err;
+    }
+    
+    public int getGroup(String name) {
+    	SQLiteDatabase db = this.getReadableDatabase();
+    	 
+        Cursor cursor = db.rawQuery("SELECT id FROM groups WHERE name = \"" + name + "\"", null);
+        
+        cursor.moveToFirst();
+        return cursor.getInt(0);
+    }
+    
+    public void deleteGroup(int id) {
+    	 
+        SQLiteDatabase db = this.getWritableDatabase();
+ 
+        db.delete(TABLE_GROUPS,
+                KEY_ID + " = ?",
+                new String[] { String.valueOf(id) });
+        
+        db.delete(TABLE_PORTAL_GROUPS,
+                KEY_ID_GROUP + " = ?",
+                new String[] { String.valueOf(id) });
+ 
+        db.close();
+    }
+    
+    public boolean addPortalGroup(int portalID, int groupID) {
+    	
+    	ContentValues values = new ContentValues();
+        values.put(KEY_ID_PORTAL, portalID);
+        values.put(KEY_ID_GROUP, groupID);
+
+        long err = this.getWritableDatabase().insert(TABLE_PORTAL_GROUPS,
+                null,
+                values);
+    	
+        if(err == -1)
+        	return false;
+        else
+        	return true;
+    }
+    
+    public void createGroups() {
+    	SQLiteDatabase db = this.getReadableDatabase();
+    	
+    	db.execSQL("DROP TABLE IF EXISTS groups");
+    	db.execSQL("DROP TABLE IF EXISTS portalgroups");
+    	
+    	String CREATE_GROUP_TABLE = "CREATE TABLE groups ( " +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
+                "name TEXT UNIQUE)";
+    	db.execSQL(CREATE_GROUP_TABLE);
+    	
+    	CREATE_GROUP_TABLE = "CREATE TABLE portalgroups ( " +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
+                "portal_id INTEGER, " +
+                "group_id INTEGER)";
+    	db.execSQL(CREATE_GROUP_TABLE);
+    	
+    	db.close();
+    }
+    
     public void Upgrade() {
-    	Log.d("UP", "-1");
     	SQLiteDatabase db = this.getReadableDatabase();
     	ArrayList<Portal> l = new ArrayList<Portal>();
     	
     	String query = "SELECT * FROM portals";
-    	Log.d("UP", "0");
     	Cursor c = db.rawQuery(query, null);
-    	Log.d("UP", "1");
     	c.moveToFirst();
-    	Log.d("UP", "2");
     	while(!c.isAfterLast()) {
     		Log.d("SIZE", getPortalPure(c.getInt(0)).toString());
     		l.add(getPortalPure(c.getInt(0)));
@@ -111,83 +218,67 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
  
     public void addPortal(Portal p){
         Log.d("addBook", p.toString());
-        // 1. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
  
-        // 2. create ContentValues to add key "column"/value
         ContentValues values = new ContentValues();
-        values.put(KEY_NAME, p.getName()); // get title 
-        values.put(KEY_DATE, p.getDate()); // get author
-        values.put(KEY_RECHARGE, p.getRecharge()); // get author
+        values.put(KEY_NAME, p.getName());
+        values.put(KEY_DATE, p.getDate());
+        values.put(KEY_RECHARGE, p.getRecharge());
         values.put(KEY_LATITUDE, p.getPos()[0]);
         values.put(KEY_LONGITUDE, p.getPos()[1]);
  
-        // 3. insert
-        db.insert(TABLE_PORTALS, // table
-                null, //nullColumnHack
-                values); // key/value -> keys = column names/ values = column values
+        db.insert(TABLE_PORTALS,
+                null,
+                values);
  
-        // 4. close
         db.close(); 
     }
     
     public Portal getPortalPure(int id){
     	 
-        // 1. get reference to readable DB
         SQLiteDatabase db = this.getReadableDatabase();
  
-        // 2. build query
         Cursor cursor = 
-                db.query(TABLE_PORTALS, // a. table
-                COLUMNS_OLD, // b. column names
-                " id = ?", // c. selections 
-                new String[] { String.valueOf(id) }, // d. selections args
-                null, // e. group by
-                null, // f. having
-                null, // g. order by
-                null); // h. limit
+                db.query(TABLE_PORTALS,
+                COLUMNS_OLD,
+                " id = ?",
+                new String[] { String.valueOf(id) },
+                null,
+                null,
+                null,
+                null);
  
-        // 3. if we got results get the first one
         if (cursor != null)
             cursor.moveToFirst();
  
-        // 4. build book object
         Portal p = new Portal(Integer.parseInt(cursor.getString(0)), cursor.getString(1), cursor.getString(2), cursor.getString(3), 500.0, 500.0);
  
-        // 5. return book
         return p;
     }
  
     public Portal getPortal(int id){
  
-        // 1. get reference to readable DB
         SQLiteDatabase db = this.getReadableDatabase();
  
-        // 2. build query
         Cursor cursor = 
-                db.query(TABLE_PORTALS, // a. table
-                COLUMNS, // b. column names
-                " id = ?", // c. selections 
-                new String[] { String.valueOf(id) }, // d. selections args
-                null, // e. group by
-                null, // f. having
-                null, // g. order by
-                null); // h. limit
+                db.query(TABLE_PORTALS,
+                COLUMNS,
+                " id = ?",
+                new String[] { String.valueOf(id) },
+                null,
+                null,
+                null,
+                null);
  
-        // 3. if we got results get the first one
         if (cursor != null)
             cursor.moveToFirst();
  
-        // 4. build book object
         Portal book = new Portal(Integer.parseInt(cursor.getString(0)), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getDouble(0), cursor.getDouble(1));
- 
-        // 5. return book
+
         return book;
     }
     
-    // Get All Books
     public Cursor getAllPortals(int order) {
-        // 1. build the query
         String query = "SELECT id as _id, name, date, strftime('%d/%m/%Y  -  %H:%M:%S', date) AS dateF, CAST((julianday('now') - julianday(date)) AS INTEGER) AS days, recharge, strftime('%d/%m/%Y  -  %H:%M:%S', recharge) AS rechargeF, CAST((julianday('now') - julianday(recharge)) AS INTEGER) AS recharges, latitude, longitude FROM " + TABLE_PORTALS;
         
         switch(order) {
@@ -205,8 +296,6 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         		break;
         }
         		
- 
-        // 2. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(query, null);
         if(cursor != null)
@@ -214,41 +303,38 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         return cursor;
     }
  
-     // Updating single book
     public int updatePortal(Portal p) {
  
-        // 1. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
  
-        // 2. create ContentValues to add key "column"/value
         ContentValues values = new ContentValues();
-        values.put("name", p.getName()); // get title 
-        values.put("date", p.getDate()); // get author
-        values.put("recharge", p.getRecharge()); // get author
+        values.put("name", p.getName());
+        values.put("date", p.getDate());
+        values.put("recharge", p.getRecharge());
  
         String query = "UPDATE portals SET recharge = '" + p.getRecharge() + "' WHERE " + KEY_ID + " = ?" + p.getId();
       
         db.execSQL(query);
-        
-        // 4. close
+
         db.close();
  
         return 0;
  
     }
- 
-    // Deleting single book
+
+
     public void deletePortal(int id) {
- 
-        // 1. get reference to writable DB
-        SQLiteDatabase db = this.getWritableDatabase();
- 
-        // 2. delete
+
+        SQLiteDatabase db = this.getWritableDatabase(); 
+        
         db.delete(TABLE_PORTALS,
                 KEY_ID+" = ?",
-                new String[] { String.valueOf(id) }); //selection args
- 
-        // 3. close
+                new String[] { String.valueOf(id) });
+        
+        db.delete(TABLE_PORTAL_GROUPS,
+                KEY_ID_PORTAL + " = ?",
+                new String[] { String.valueOf(id) });
+
         db.close();
  
         Log.d("deleteBook", String.valueOf(id));

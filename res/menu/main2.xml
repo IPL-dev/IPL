@@ -2,7 +2,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.ingress.portal.log.MainActivity" >
 
-    
+    <item
+        android:id="@+id/group_menu"
+        android:showAsAction="always"
+        android:title="Group"/>
     <item
         android:title="Sort"
 	    android:showAsAction="always">
@@ -21,7 +24,6 @@
 	            android:title="Sort by Recharge Date" />
 	    </menu>
 	</item>
-    
     <item
         android:id="@+id/action_example"
         android:showAsAction="withText|ifRoom"

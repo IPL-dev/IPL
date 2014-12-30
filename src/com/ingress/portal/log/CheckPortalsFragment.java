@@ -2,13 +2,16 @@ package com.ingress.portal.log;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.location.Location;
@@ -24,8 +27,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ExpandableListView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
 
 
@@ -35,7 +44,9 @@ public class CheckPortalsFragment extends Fragment{
 	static public boolean active = false;
 	static public CheckPortalsFragment activeFrag;
 	static public int SortOrder = 0;
+	static public String Group = "";
 	static public boolean outdated = false;
+	static public int list = 0;
 
 	@Override
 	public void onStart() {
@@ -49,6 +60,7 @@ public class CheckPortalsFragment extends Fragment{
 		super.onStop();
 		active = false;
 		activeFrag = null;
+		getActivity().unregisterForContextMenu((ListView) this.getView().findViewById(R.id.listView1Check));
 	}
 
 	public void refreshList(){
@@ -62,7 +74,17 @@ public class CheckPortalsFragment extends Fragment{
 			db.Upgrade();
 		}
 
-		Cursor cursor = db.getAllPortals(SortOrder);
+		Cursor cursor = null;
+		switch(list) {
+			case 0:
+				cursor = db.getAllPortals(SortOrder);
+				break;
+			case 1:
+				Toast.makeText(getActivity().getApplicationContext(), "GRUPO", Toast.LENGTH_LONG).show();
+				cursor = db.getGroupPortals(Group, SortOrder);
+				break;
+		}
+		
 		/*
 		// The desired columns to be bound
 		String[] columns = new String[] {
@@ -172,6 +194,7 @@ public class CheckPortalsFragment extends Fragment{
 			if(MainActivity.savePos) {
 				menu.add(Menu.NONE, 4, 4, "Save current position"); 
 			}
+			menu.add(Menu.NONE, 5, 5, "Add to Group");
 		}
 	}
 
@@ -190,6 +213,125 @@ public class CheckPortalsFragment extends Fragment{
 		String finalDate = timeFormat.format(myDate);
 
 		return finalDate;
+	}
+	
+	public void openGroupInsert(final Spinner parent) {
+		final AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
+		
+		alert.setTitle("Insert Group");
+		alert.setMessage("Group Name");
+
+		// Set an EditText view to get user input 
+		final EditText input = new EditText(getActivity());
+		final MySQLiteHelper db = new MySQLiteHelper(getActivity().getApplicationContext());
+		
+		alert.setView(input);
+
+		alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				String value = input.getText().toString();
+				db.addGroup(value);
+				updateSpinner(parent, value);
+			}
+		});
+
+		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+
+		alert.show();
+	}
+	
+	public void updateSpinner(Spinner sp, String item) {
+		ArrayList<String> lista = new ArrayList<String>();
+		MySQLiteHelper db = new MySQLiteHelper(getActivity().getApplicationContext());
+		Cursor c = db.getGroups();
+		
+		c.moveToFirst();
+		lista.add("");
+		lista.add("New Group...");
+		lista.add("All");
+		int it = 0;
+		int i = 0;
+		while(!c.isAfterLast()) {
+			lista.add(c.getString(1));
+			if(c.getString(1).compareTo(item) == 0) {
+				it = i;
+			}
+			c.moveToNext();
+			i++;
+		}
+		
+		c.close();
+		
+		if(CheckGroupsFragment.active) {
+			CheckGroupsFragment.activeFrag.refreshList();
+		}
+		
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, lista);
+		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		sp.setAdapter(adapter);
+		if(item.compareTo("") != 0)
+			it += 3;
+		sp.setSelection(it);
+	}
+	
+	public void addPortalToGroup(int idp, String nameg) {
+		
+		MySQLiteHelper db = new MySQLiteHelper(getActivity().getApplicationContext());
+		int idg = db.getGroup(nameg);
+		db.addPortalGroup(idp, idg);
+		return;
+	}
+	
+	public void openGroupDialog(final int idp) {
+		final AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
+		
+		alert.setTitle("Insert Group");
+		alert.setMessage("Group Name");
+
+		// Set an EditText view to get user input 
+		final Spinner input = new Spinner(getActivity());
+		
+		updateSpinner(input, "");
+		
+		input.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+			@Override
+			public void onItemSelected(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				if(arg2 == 1) {
+					openGroupInsert(input);
+				}
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> arg0) {
+				
+			}
+		});
+		
+		alert.setView(input);
+
+		final Activity parent = getActivity();
+		alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				String value = input.getSelectedItem().toString();
+				Toast.makeText(parent, "TESTE: " + value, Toast.LENGTH_LONG).show();
+				if((value.compareTo("All") != 0) && (value.compareTo("") != 0) && (value.compareTo("New Group...") != 0)) {
+					addPortalToGroup(idp, input.getSelectedItem().toString());
+				}
+				refreshList();
+			}
+		});
+
+		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+
+		alert.show();
 	}
 
 	@Override
@@ -241,6 +383,9 @@ public class CheckPortalsFragment extends Fragment{
 				db.addPortal(temp);
 				Toast.makeText(getActivity().getApplicationContext(), "Location updated", Toast.LENGTH_LONG).show();
 			}
+			break;
+		case 5:
+			openGroupDialog(p.getId());
 			break;
 		}
 		refreshList();

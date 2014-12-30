@@ -1,43 +1,33 @@
 package com.ingress.portal.log;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
-import java.util.TimeZone;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
 import com.ingress.portal.log.android.sqlite.MySQLiteHelper;
-import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.text.format.DateFormat;
 import android.util.Log;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
 
 public class ShowPivotsFragment extends Fragment{
 
 	public SimpleCursorAdapter dataAdapter;
 	static public int SortOrder = 0;
 	static public boolean outdated = false;
+	public HashMap<Integer, Node> graph;
 
 	@Override
 	public void onStart() {
@@ -62,7 +52,7 @@ public class ShowPivotsFragment extends Fragment{
 		for(i=0;i<portals.size();i++) {
 			p = portals.get(i);
 			pos = p.getPos();
-			dist = Math.pow(medLat - pos[0], 2) + Math.pow(medLong - pos[1], 2);
+			dist = Math.pow(pos[0] - medLat, 2) + Math.pow(pos[1] - medLong, 2);
 			dists.add(new distPortal(p.getId(), p.getName(), dist, pos, i));
 		}
 
@@ -90,11 +80,13 @@ public class ShowPivotsFragment extends Fragment{
 		int n = 0;
 		c.moveToFirst();
 		while(!c.isAfterLast()) {
-			temp = new Portal(c.getInt(0), c.getString(1), c.getString(3), c.getString(6), c.getString(4), c.getString(7), c.getDouble(8), c.getDouble(9));
-			sumLat += c.getDouble(8);
-			sumLong += c.getDouble(9);
-			n++;
-			portals.add(temp);
+			if((c.getDouble(8) != 500.0 && c.getDouble(9) != 500.0) && (c.getDouble(8) != 0.0 && c.getDouble(9) != 0.0)) {
+				temp = new Portal(c.getInt(0), c.getString(1), c.getString(3), c.getString(6), c.getString(4), c.getString(7), c.getDouble(8), c.getDouble(9));
+				sumLat += c.getDouble(8);
+				sumLong += c.getDouble(9);
+				n++;
+				portals.add(temp);
+			}
 			c.moveToNext();
 		}
 		c.close();
@@ -130,34 +122,67 @@ public class ShowPivotsFragment extends Fragment{
 
 			Group tempG;
 
-			tempG = new Group(pivots[0].name);
+			tempG = new Group(pivots[0].name, pivots[0].id);
 			res.add(0, tempG);
-			tempG = new Group(pivots[1].name);
+			tempG = new Group(pivots[1].name, pivots[1].id);
 			res.add(1, tempG);
-			tempG = new Group(pivots[2].name);
+			tempG = new Group(pivots[2].name, pivots[2].id);
 			res.add(2, tempG);
 
-
+			//graph.add(pivots[0].id + "_" + pivots[1].id);
+			Log.d("EDGE", pivots[0].id + "_" + pivots[1].id);
+			//graph.add(pivots[0].id + "_" + pivots[2].id);
+			Log.d("EDGE", pivots[0].id + "_" + pivots[2].id);
+			//graph.add(pivots[1].id + "_" + pivots[2].id);
+			Log.d("EDGE", pivots[1].id + "_" + pivots[2].id);
+			
 			int i;
 			int min;
 			for(i=0;i<portals.size();i++) {
 				min = compare3(distsP1.get(i).getDist(), distsP2.get(i).getDist(), distsP3.get(i).getDist());
-				
-				Log.d("PIVOTS", "P1: " + distsP1.get(i).getDist() + " P2: " + distsP2.get(i).getDist() + " P3: " + distsP3.get(i).getDist() + " MIN: " + min);
-
 				res.get(min).insertChild(distsP1.get(i).name);
+				//graph.add(res.get(min).id + "_" + distsP1.get(i).id);
+				Log.d("EDGE", res.get(min).id + "_" + distsP1.get(i).id);
 			}
 		}
 		else {
 			int i;
 			for(i=0;i<portals.size();i++) {
 				Group tempG;
-				tempG = new Group(portals.get(i).getName());
+				tempG = new Group(portals.get(i).getName(), portals.get(i).getId());
 				res.add(tempG);
 			}
 		}
 
 		return res;
+	}
+	
+	public boolean isCross(Point p, Point a, Point b, Point c) {
+		boolean ret = true;
+		
+		double xa, ya, ka, xb, yb, kb;
+		
+		xa = p.y - a.y;
+		ya = a.x - p.x;
+		ka = p.x*a.y - p.y*a.x;
+		
+		xb = b.y - c.y;
+		yb = c.x - b.x;
+		kb = b.x*c.y - b.y*c.x;
+		
+		if((xa*b.x + ya*b.y + ka)*(xa*c.x + ya*c.y + ka) > 0) {
+			ret = false;
+		}
+		else {
+			if((xb*p.x + yb*p.y + kb)*(xb*a.x + yb*a.y + kb) > 0) {
+				ret = false;
+			}
+			else {
+				ret = true;
+			}
+		}
+		
+		return ret;
 	}
 
 	public void displayResultList(View v) {
@@ -173,27 +198,13 @@ public class ShowPivotsFragment extends Fragment{
 		//getActivity().registerForContextMenu(listView);
 		registerForContextMenu(listView);
 
+		graph = new HashMap<Integer, Node>();
 		ArrayList<Group> tempL = calculatePivots(cursor);
 
 		// Assign adapter to ListView		
 		//listView.setAdapter(dataAdapter);
 		listView.setAdapter(new ExpandableListAdapter2(tempL, getActivity()));
 	}
-
-	public void onActivityResult (int requestCode, int resultCode, Intent data) {
-		//Collect data from the intent and use it
-		switch(requestCode) {
-		case 0:
-			if(resultCode == Activity.RESULT_OK)
-				refreshList();
-			break;
-		case 1:
-			if(resultCode == Activity.RESULT_OK)
-				refreshList();
-			break;
-		}
-	}
-
 
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -225,112 +236,25 @@ public class ShowPivotsFragment extends Fragment{
 		}
 		return gps;
 	}
-
-	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
-		if (v.getId()==R.id.listView1Check) {
-			ExpandableListView listView = (ExpandableListView) v.findViewById(R.id.listView1Check);
-			ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo)menuInfo;
-			int group = ExpandableListView.getPackedPositionGroup(info.packedPosition);
-
-			Portal p = (Portal) listView.getExpandableListAdapter().getGroup(group);
-
-			menu.setHeaderTitle(p.getName());
-			String[] menuItems;
-			if((p.getPos()[0] != 500.0 && p.getPos()[1] != 500.0) && (p.getPos()[0] != 0.0 && p.getPos()[1] != 0.0)) {
-				menuItems = new String[] {
-						"Recharge", "Remove", "Google Maps", "Ingress Intel", 
-				};
-			}
-			else {
-				menuItems = new String[] {
-						"Recharge", "Remove"
-				};
-			}
-
-			for (int i = 0; i<menuItems.length; i++) {
-				menu.add(Menu.NONE, i, i, menuItems[i]);
-			}
-
-			if(MainActivity.savePos) {
-				menu.add(Menu.NONE, 4, 4, "Save current position"); 
-			}
+	
+	public class Node {
+		int id;
+		ArrayList<Integer> edges;
+		
+		public Node(int u) {
+			this.id = u;
+			this.edges = new ArrayList<Integer>();
+		}
+		
+		public void addEdge(int v) {
+			edges.add(v);
 		}
 	}
-
-	public String formatDate(String d) {
-		SimpleDateFormat dateFormat = new SimpleDateFormat(
-				"dd/MM/yyyy  -  HH:mm:ss");
-		Date myDate = null;
-		try {
-			myDate = dateFormat.parse(d);
-
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
-
-		SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String finalDate = timeFormat.format(myDate);
-
-		return finalDate;
+	
+	public class Point {
+		public double x, y;
 	}
-
-	@Override
-	public boolean onContextItemSelected(MenuItem item) {
-		MySQLiteHelper db = new MySQLiteHelper(getActivity().getApplicationContext());
-		//AdapterContextMenuInfo info = (AdapterContextMenuInfo)item.getMenuInfo();
-		int position = item.getItemId();
-
-		ExpandableListView listView = (ExpandableListView) this.getView().findViewById(R.id.listView1Check);
-		//Cursor cursor = (Cursor) listView.getItemAtPosition(info.position);
-
-		ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo)item.getMenuInfo();
-		int group = ExpandableListView.getPackedPositionGroup(info.packedPosition);
-
-		Portal p = (Portal) listView.getExpandableListAdapter().getGroup(group);
-
-		double lat = p.getPos()[0];
-		double lon = p.getPos()[1];
-		Intent browserIntent;
-		Portal temp;
-
-		int id = p.getId();
-		switch(position) {
-		case 0:
-			Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-			temp = new Portal(p.getName(), formatDate(p.getDate()), DateFormat.format("yyyy-MM-dd HH:mm:ss", cal.getTime()).toString(), lat, lon);
-			db.deletePortal(id);
-			db.addPortal(temp);
-			break;
-		case 1:
-			db.deletePortal(p.getId());
-			break;
-		case 2:
-			browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?q=" + lat + "," + lon));
-			startActivity(browserIntent);
-			break;
-		case 3:
-			browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.ingress.com/intel?ll=" + lat + "," + lon + "&z=17"));
-			startActivity(browserIntent);
-			break;
-		case 4:
-			double[] pos = getGPS(); 
-			if(pos[0] == 0.0 && pos[1] == 0.0) {
-				Toast.makeText(getActivity().getApplicationContext(), "Location could not be determined", Toast.LENGTH_LONG).show();
-			}
-			else {
-				temp = new Portal(p.getName(), formatDate(p.getDate()), formatDate(p.getRecharge()), pos[0], pos[1]);
-				db.deletePortal(id);
-				db.addPortal(temp);
-				Toast.makeText(getActivity().getApplicationContext(), "Location updated", Toast.LENGTH_LONG).show();
-			}
-			break;
-		}
-		refreshList();
-
-		return true;
-	}
+	
 
 	public class distPortal implements Comparable<distPortal>{
 		int id;
@@ -349,6 +273,10 @@ public class ShowPivotsFragment extends Fragment{
 
 		public double getDist() {
 			return this.dist;
+		}
+		
+		public double getAng() {
+			return Math.atan2(this.pos[1], this.pos[0]);
 		}
 
 		public double[] getPos() {

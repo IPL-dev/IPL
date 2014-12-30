@@ -1,9 +1,7 @@
 package com.ingress.portal.log;
 
 import java.util.ArrayList;
-
 import android.app.Activity;
-import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

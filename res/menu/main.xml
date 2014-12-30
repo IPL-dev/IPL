@@ -3,6 +3,10 @@
     tools:context="com.ingress.portal.log.MainActivity" >
     
     <item
+        android:id="@+id/group_menu"
+        android:showAsAction="always"
+        android:title="Group"/>
+    <item
         android:id="@+id/action_example"
         android:showAsAction="withText|ifRoom"
         android:title="@string/action_example"/>
