@@ -13,30 +13,50 @@ import android.util.Log;
 public class MySQLiteHelper extends SQLiteOpenHelper {
  
     // Database Version
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 10;
     // Database Name
     private static final String DATABASE_NAME = "PortalDB";
  
     public MySQLiteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
- 
+    
     @Override
-    public void onCreate(SQLiteDatabase db) {
-        String CREATE_PORTAL_TABLE = "CREATE TABLE portals ( " +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
+    public void onOpen (SQLiteDatabase db) {
+    }
+    
+    public void createGroups(SQLiteDatabase db) {
+    	String CREATE_PORTAL_TABLE = "CREATE TABLE portals ( " +
+        		"id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
                 "name TEXT, " +
                 "date DATETIME, " +
                 "recharge DATETIME," +
                 "latitude REAL," +
-                "longitude REAL)";
-
+                "longitude REAL);";
         db.execSQL(CREATE_PORTAL_TABLE);
+    	
+    	String CREATE_GROUP_TABLE = "CREATE TABLE groups ( " +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
+                "name TEXT UNIQUE);";
+    	db.execSQL(CREATE_GROUP_TABLE);
+    	
+    	CREATE_GROUP_TABLE = "CREATE TABLE portalgroups ( " +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
+                "portal_id INTEGER, " +
+                "group_id INTEGER);";
+    	db.execSQL(CREATE_GROUP_TABLE);
+    }
+ 
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        createGroups(db);
     }
  
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS portals");
+        db.execSQL("DROP TABLE IF EXISTS groups");
+    	db.execSQL("DROP TABLE IF EXISTS portalgroups");
         this.onCreate(db);
     }
  
@@ -80,8 +100,17 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     }
     
     public Cursor getGroups() {
-    	SQLiteDatabase db = this.getWritableDatabase();
+    	SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT id as _id, name FROM groups ORDER BY name ASC", null);
+        if(cursor != null)
+        	cursor.moveToFirst();
+        
+        return cursor;
+    }
+    
+    public Cursor getAllPortalGroups() {
+    	SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT id as _id, portal_id, group_id FROM portalgroups ORDER BY portal_id ASC", null);
         if(cursor != null)
         	cursor.moveToFirst();
         
@@ -107,7 +136,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         		break;
         }
         		
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(query, null);
         if(cursor != null)
         	cursor.moveToFirst();
@@ -146,7 +175,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         db.delete(TABLE_PORTAL_GROUPS,
                 KEY_ID_GROUP + " = ?",
                 new String[] { String.valueOf(id) });
- 
+        
         db.close();
     }
     
@@ -164,26 +193,6 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         	return false;
         else
         	return true;
-    }
-    
-    public void createGroups() {
-    	SQLiteDatabase db = this.getReadableDatabase();
-    	
-    	db.execSQL("DROP TABLE IF EXISTS groups");
-    	db.execSQL("DROP TABLE IF EXISTS portalgroups");
-    	
-    	String CREATE_GROUP_TABLE = "CREATE TABLE groups ( " +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
-                "name TEXT UNIQUE)";
-    	db.execSQL(CREATE_GROUP_TABLE);
-    	
-    	CREATE_GROUP_TABLE = "CREATE TABLE portalgroups ( " +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " + 
-                "portal_id INTEGER, " +
-                "group_id INTEGER)";
-    	db.execSQL(CREATE_GROUP_TABLE);
-    	
-    	db.close();
     }
     
     public void Upgrade() {
@@ -296,7 +305,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
         		break;
         }
         		
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(query, null);
         if(cursor != null)
         	cursor.moveToFirst();
@@ -325,19 +334,21 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 
     public void deletePortal(int id) {
 
-        SQLiteDatabase db = this.getWritableDatabase(); 
-        
+        SQLiteDatabase db = this.getWritableDatabase();
+		
         db.delete(TABLE_PORTALS,
                 KEY_ID+" = ?",
                 new String[] { String.valueOf(id) });
-        
-        db.delete(TABLE_PORTAL_GROUPS,
-                KEY_ID_PORTAL + " = ?",
-                new String[] { String.valueOf(id) });
 
+        /*db.delete(TABLE_PORTAL_GROUPS,
+                KEY_ID_PORTAL + " = ?",
+                new String[] { String.valueOf(id) });*/
+
+        
+        
         db.close();
  
-        Log.d("deleteBook", String.valueOf(id));
+        //Log.d("TABELA", String.valueOf(id));
  
     }
 }

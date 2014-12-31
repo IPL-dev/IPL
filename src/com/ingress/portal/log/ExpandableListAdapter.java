@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import android.app.Activity;
 import android.database.Cursor;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,9 +22,10 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter {
     	this.portals = new ArrayList<Portal>();
     	
     	c.moveToFirst();
+    	Log.d("TABELA", "LISTA");
         while(!c.isAfterLast()) {
         	temp = new Portal(c.getInt(0), c.getString(1), c.getString(3), c.getString(6), c.getString(4), c.getString(7), c.getDouble(8), c.getDouble(9));
-        	
+        	Log.d("TABELA", c.getString(0));
             portals.add(temp);
             c.moveToNext();
         }

@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -70,7 +71,7 @@ public class CheckPortalsFragment extends Fragment{
 	public void displayResultList(View v) {
 
 		MySQLiteHelper db = new MySQLiteHelper(getActivity().getApplicationContext());
-		if(db.isUpdated()) {
+		if(!db.isUpdated()) {
 			db.Upgrade();
 		}
 
@@ -354,6 +355,7 @@ public class CheckPortalsFragment extends Fragment{
 		Portal temp;
 
 		int id = p.getId();
+		Cursor c;
 		switch(position) {
 		case 0:
 			Calendar cal = Calendar.getInstance(TimeZone.getDefault());

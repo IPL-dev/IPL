@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -158,6 +159,39 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
 		actionBar.setDisplayShowTitleEnabled(true);
 		actionBar.setTitle(mTitle);
+	}
+	
+	public void DebugTables() {
+		MySQLiteHelper db = new MySQLiteHelper(getApplicationContext());
+		Log.d("TABELA", "PORTALS");
+		Cursor c = db.getAllPortals(0);
+		
+		c.moveToFirst();
+		while(!c.isAfterLast()) {
+			Log.d("TABELA", c.getString(0) + "|" + c.getString(1) + "|" +c.getString(2) + "|" +c.getString(3) + "|" +c.getString(4) + "|" +c.getString(5) + "|" +c.getString(6) + "|" +c.getString(7) + "|" + c.getString(8) + "|" + c.getString(9));
+			c.moveToNext();
+		}
+		c.close();
+		
+		Log.d("TABELA", "GROUPS");
+		c = db.getGroups();
+		
+		c.moveToFirst();
+		while(!c.isAfterLast()) {
+			Log.d("TABELA", c.getString(0) + "|" + c.getString(1));
+			c.moveToNext();
+		}
+		c.close();
+		
+		Log.d("TABELA", "PORTALGROUPS");
+		c = db.getAllPortalGroups();
+		
+		c.moveToFirst();
+		while(!c.isAfterLast()) {
+			Log.d("TABELA", c.getString(0) + "|" + c.getString(1) + "|" +c.getString(2));
+			c.moveToNext();
+		}
+		c.close();
 	}
 
 
@@ -315,6 +349,7 @@ implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 			break;
 		case(R.id.group_menu):
 			openGroupDialog();
+			DebugTables();
 			break;
 		case(R.id.menuSortName):
 			Toast.makeText(getApplicationContext(), "List sorted by portal name", Toast.LENGTH_SHORT).show();
